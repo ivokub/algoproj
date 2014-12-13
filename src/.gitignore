@@ -1,0 +1,6 @@
+# This directory should contain only the source files and makefile. Ignore
+# everything else
+*
+!.gitignore
+!*.c
+!Makefile

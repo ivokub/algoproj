@@ -1,0 +1,4 @@
+# This directory should contain only the headers. Ignore everything else
+*
+!.gitignore
+!*.h
