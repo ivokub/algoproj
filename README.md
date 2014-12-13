@@ -22,4 +22,7 @@ See:
 
 ## License
 
-The software is licensed under MIT license (see `LICENSE`)
+The software is licensed under MIT license (see `LICENSE`).
+
+This software uses hash table implementation by Per Ola Kristensson. This
+software is licensed under LGPL license (see `LICENSE.LGPL`).
