@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "uthash.h"
 
 #ifndef _TYPE_H
 #define _TYPE_H
@@ -10,25 +11,45 @@
 #define ERR_MALLOC -1
 #endif
 
+#ifndef _HTABLE_H
+#define _HTABLE_H
+
+typedef struct {
+    row r;
+    col c;
+} location;
+
+typedef struct {
+    location loc;
+    val* value;
+    UT_hash_handle hh;
+} cell;
+
+int htable_insert(row, col, uint);
+int htable_destroy();
+uint htable_get(row, col);
+
+#endif
+
 #ifndef _STRUCT_COO_H
 #define _STRUCT_COO_H
-typedef struct STRUCT_COO {
+typedef struct {
     uint len;
     uint cap;
     uint nrows;
     uint ncols;
-    val* values;
-    row* rows;
-    col* cols;
+    val** values;
+    location** locations;
+    cell *cells;
 } struct_coo;
-struct_coo* new_coo(uint, uint);
+struct_coo* new_coo(uint, uint, uint);
 int coo_set_value(struct_coo*, val, row, col);
 val* coo_get_value(struct_coo*, row, col);
 #endif
 
 #ifndef _STRUCT_CSR_H
 #define _STRUCT_CSR_H
-typedef struct STRUCT_CSR {
+typedef struct {
     uint len;
     uint cap;
     val* values;
@@ -41,7 +62,7 @@ struct_csr* convert_coo_csr(struct_csr*);
 
 #ifndef _STRUCT_ELL_H
 #define _STRUCT_ELL_H
-typedef struct STRUCT_ELL {
+typedef struct {
     uint len;
     uint cap;
     val** values;

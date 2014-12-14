@@ -1,10 +1,10 @@
 #include "struct.h"
 
-struct_coo* new_coo(uint rowlen, uint collen) {
-    struct_coo* res = malloc(sizeof(struct_coo));
+struct_coo* new_coo(uint rowlen, uint collen, uint maxsize) {
+    struct_coo* res = malloc(sizeof(struct_coo) * maxsize);
     res->values = malloc(sizeof(val));
-    res->rows = malloc(sizeof(row));
-    res->cols = malloc(sizeof(col));
+    res->locations = malloc(sizeof(location));
+    res->cells = NULL;
     res->len = 0;
     res->cap = 1;
     res->nrows = rowlen;
@@ -18,40 +18,70 @@ int _coo_increase(struct_coo* mat, int newsize) {
         // Otherwise, we wouldn't know what to do with the residue.
         return 0;
     }
-    mat->values = realloc(mat->values, sizeof(val) * newsize);
-    mat->rows = realloc(mat->rows, sizeof(val) * newsize);
-    mat->cols = realloc(mat->cols, sizeof(val) * newsize);
-    mat->cap = newsize;
-    if (!(mat->values) || !(mat->rows) || !(mat->cols)) {
+    // If the user requests too small amount of memory, then allocate
+    // some prematurely.
+    if (mat->cap * 2 < newsize) {
+        mat->values = realloc(mat->values, sizeof(val*) * newsize);
+        mat->locations = realloc(mat->locations, sizeof(location*) * newsize);
+        mat->cap = newsize;
+    } else {
+        mat->values = realloc(mat->values, sizeof(val*) * 2 * mat->cap);
+        mat->locations = realloc(mat->locations, sizeof(location*) * 2 * mat->cap);
+        mat->cap = 2 * mat->cap;
+    }
+    if (mat->values == NULL || mat->locations == NULL) {
         return -1;
     }
     return 0;
 }
 
 int coo_set_value(struct_coo* mat, val v, row r, col c) {
+    // Boundaries
     if (r + 1 > mat->nrows || c + 1 > mat->ncols ) {
         return -1;
     }
-    int e = _coo_increase(mat, mat->len + 1);
-    if (e) {
-        return e;
+
+    if (_coo_increase(mat, mat->len + 1)) {
+        return -1;
     }
-    mat->values[mat->len] = v;
-    mat->rows[mat->len] = r;
-    mat->cols[mat->len] = c;
-    mat->len += 1;
+
+    // Add value and location to the data structure
+    mat->values[mat->len] = malloc(sizeof(val));
+    *(mat->values[mat->len]) = v;
+    location loc = {r, c};
+    mat->locations[mat->len] = malloc(sizeof(location));
+    *(mat->locations[mat->len]) = loc;
+    mat->len++;
+
+    // Record the location in hashtable
+    cell *records = NULL;
+    cell *in = malloc(sizeof(cell));
+    memset(in, 0, sizeof(cell));
+    in->loc.r = r;
+    in->loc.c = c;
+    in->value = mat->values[mat->len];
+    HASH_ADD(hh, mat->cells, loc, sizeof(location), in);
     return 0;
 }
 
 val* coo_get_value(struct_coo* mat, row r, col c) {
+    // Boundaries
     if (r + 1 > mat->nrows || c + 1 > mat->ncols ) {
         return 0;
     }
-    int i;
-    for (i = 0; i < mat->len; i++) {
-        if (mat->rows[i] == r && mat->cols[i] == c) {
-            return mat->values + i;
-        }
+    // Find the value from hash table
+    cell cl;
+    memset(&cl, 0, sizeof(cell));
+    cl.loc.r = r;
+    cl.loc.c = c;
+    cell* res;
+    HASH_FIND(hh, mat->cells, &cl.loc, sizeof(location), res);
+    if (res) {
+        return res->value;
     }
+    return 0;
+}
+
+struct_coo* coo_matrix_mult(struct_coo* mat1, struct_coo* mat2) {
     return 0;
 }
