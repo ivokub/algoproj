@@ -54,12 +54,21 @@ struct_coo* coo_matrix_mult(struct_coo*, struct_coo*);
 typedef struct {
     uint len;
     uint cap;
-    val* values;
-    row* rows;
-    col* cols;
+    uint nrows;
+    uint ncols;
+    val** values;
+    col** colind;
+    uint* rowptr;
+    cell *cells;
 } struct_csr;
+struct_csr* new_csr(uint, uint, uint);
 struct_coo* convert_csr_coo(struct_csr*);
-struct_csr* convert_coo_csr(struct_csr*);
+struct_csr* convert_coo_csr(struct_coo*);
+int csr_set_value(struct_csr*, val, row, col);
+val* csr_get_value(struct_csr*, row, col);
+struct_csr* csr_matrix_add(struct_csr*, struct_csr*);
+struct_csr* csr_matrix_mult(struct_csr*, struct_csr*);
+int _csr_increase(struct_csr*, int);
 #endif
 
 #ifndef _STRUCT_ELL_H
