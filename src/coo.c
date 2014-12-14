@@ -92,8 +92,11 @@ struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
         return 0;
     }
     // Strategy: copy all values from first matrix. Then add values from second
-    // matrix. Complexity O(max(M1, M2)), where M1 and M2 are the number of
-    // values in the matrices, respectively.
+    // matrix. 
+    //
+    // Complexity analysis: We iterate over all nonzero values of both cells.
+    // During each loop we do a simple constant-time value retrieval and
+    // assignment. Thus the complexity is O(M1 + M2).
     struct_coo* res = new_coo(mat1->nrows, mat1->ncols, mat1->len);
     cell *newitem, *item, *tmp, *tmp2, *c = NULL;
     val* v;
