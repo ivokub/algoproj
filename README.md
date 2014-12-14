@@ -26,3 +26,6 @@ The software is licensed under MIT license (see `LICENSE`).
 
 This software uses hash table implementation by Per Ola Kristensson. This
 software is licensed under LGPL license (see `LICENSE.LGPL`).
+
+This software uses hash table implementation by Troy D. Hanson. This software is
+licensed under BSD license (see `LICENSE.BSD`).
