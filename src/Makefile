@@ -8,7 +8,7 @@ ODIR=../build
 
 LIBS=-lm
 
-_DEPS = struct.h
+_DEPS = struct.h common.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = coo.o csr.o

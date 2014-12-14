@@ -1,4 +1,5 @@
 #include "struct.h"
+#include "common.h"
 
 struct_coo* new_coo(uint rowlen, uint collen, uint maxsize) {
     struct_coo* res = malloc(sizeof(struct_coo));
@@ -36,40 +37,17 @@ int _coo_increase(struct_coo* mat, int newsize) {
 }
 
 int coo_set_value(struct_coo* mat, val v, row r, col c) {
-    // This is sparse matrix.
-    if (v == 0) {
-        return 0;
-    }
-    // Boundaries.
-    if (r + 1 > mat->nrows || c + 1 > mat->ncols ) {
-        return -1;
-    }
-
-    if (_coo_increase(mat, mat->len + 1)) {
-        return -1;
-    }
-
-    // If the value is already in the table, then change it.
-    val *existing = coo_get_value(mat, r, c);
-    if (!existing) {
-        // Add value and location to the data structure
-        mat->values[mat->len] = malloc(sizeof(val));
-        *(mat->values[mat->len]) = v;
-        location loc = {r, c};
-        mat->locations[mat->len] = malloc(sizeof(location));
-        *(mat->locations[mat->len]) = loc;
-
-        // Record the location in hashtable
-        cell *in = malloc(sizeof(cell));
-        memset(in, 0, sizeof(cell));
-        in->loc.r = r;
-        in->loc.c = c;
-        in->value = mat->values[mat->len];
-        HASH_ADD(hh, mat->cells, loc, sizeof(location), in);
-        mat->len++;
-    } else {
-       *existing = v;
-    }
+    SET_CHECK(coo)
+    IFNEW(coo)
+    // Add value and location to the data structure
+    mat->values[mat->len] = malloc(sizeof(val));
+    *(mat->values[mat->len]) = v;
+    location loc = {r, c};
+    mat->locations[mat->len] = malloc(sizeof(location));
+    *(mat->locations[mat->len]) = loc;
+    STOREHASH
+    mat->len++;
+    ENDIFNEW
     return 0;
 }
 
