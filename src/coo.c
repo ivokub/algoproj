@@ -36,7 +36,11 @@ int _coo_increase(struct_coo* mat, int newsize) {
 }
 
 int coo_set_value(struct_coo* mat, val v, row r, col c) {
-    // Boundaries
+    // This is sparse matrix.
+    if (v == 0) {
+        return 0;
+    }
+    // Boundaries.
     if (r + 1 > mat->nrows || c + 1 > mat->ncols ) {
         return -1;
     }
