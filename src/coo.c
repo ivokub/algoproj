@@ -87,6 +87,32 @@ val* coo_get_value(struct_coo* mat, row r, col c) {
     return 0;
 }
 
+struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
+    if (mat1->nrows != mat2->nrows || mat1->ncols != mat2->ncols ) {
+        return 0;
+    }
+    // Strategy: copy all values from first matrix. Then add values from second
+    // matrix. Complexity O(max(M1, M2)), where M1 and M2 are the number of
+    // values in the matrices, respectively.
+    struct_coo* res = new_coo(mat1->nrows, mat1->ncols, mat1->len);
+    cell *newitem, *item, *tmp, *tmp2, *c = NULL;
+    val* v;
+    HASH_ITER(hh, mat1->cells, item, tmp) {
+        coo_set_value(res, *item->value, item->loc.r, item->loc.c);
+    }
+    tmp = NULL;
+    item = NULL;
+    HASH_ITER(hh, mat2->cells, item, tmp) {
+        v = coo_get_value(res, item->loc.r, item->loc.c);
+        if (v) {
+            coo_set_value(res, *v + *item->value, item->loc.r, item->loc.c);
+        } else {
+            coo_set_value(res, *item->value, item->loc.r, item->loc.c);
+        }
+    }
+    return res;
+}
+
 struct_coo* coo_matrix_mult(struct_coo* mat1, struct_coo* mat2) {
     return 0;
 }
