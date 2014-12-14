@@ -46,6 +46,7 @@ struct_coo* new_coo(uint, uint, uint);
 int coo_set_value(struct_coo*, val, row, col);
 val* coo_get_value(struct_coo*, row, col);
 struct_coo* coo_matrix_add(struct_coo*, struct_coo*);
+struct_coo* coo_matrix_mult(struct_coo*, struct_coo*);
 #endif
 
 #ifndef _STRUCT_CSR_H

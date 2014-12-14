@@ -114,5 +114,32 @@ struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
 }
 
 struct_coo* coo_matrix_mult(struct_coo* mat1, struct_coo* mat2) {
-    return 0;
+    // Strategy: Take the Cartesian product of the values-locations and add the
+    // value to the location if the product of the values should be in the sum
+    // of the cell.
+    //
+    // Complexity analysis: We iterate over all nonzero entries in both
+    // matrices. This Takes M1*M2 loop executions. In each loop, we do a
+    // comparison, value retrieval (constant time because of hash tables) and
+    // assignment (also constant time because we add the value to the end of
+    // the list and hash table addition is constant time). Thus, the total
+    // complexity is O(M1 * M2).
+    if (mat1->ncols != mat2->nrows) {
+        return 0;
+    }
+    struct_coo* res = new_coo(mat1->nrows, mat2->ncols, mat1->len);
+    int i, j;
+    for (i = 0; i < mat1->len; i++) {
+        location* loc1 = mat1->locations[i];        
+        val* val1 = mat1->values[i];
+        for (j = 0; j < mat2->len; j++) {
+            location* loc2 = mat2->locations[j];
+            if (loc1->c == loc2->r) {
+                val* val2 = mat2->values[j];
+                val *current = coo_get_value(res, loc1->r, loc2->c);
+                coo_set_value(res, (current?*current:0) + *val1 * *val2, loc1->r, loc2->c);
+            }
+        }
+    }
+    return res;
 }
