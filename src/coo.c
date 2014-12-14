@@ -1,12 +1,12 @@
 #include "struct.h"
 
 struct_coo* new_coo(uint rowlen, uint collen, uint maxsize) {
-    struct_coo* res = malloc(sizeof(struct_coo) * maxsize);
-    res->values = malloc(sizeof(val));
-    res->locations = malloc(sizeof(location));
+    struct_coo* res = malloc(sizeof(struct_coo));
+    res->values = malloc(sizeof(val*) * maxsize);
+    res->locations = malloc(sizeof(location*) * maxsize);
     res->cells = NULL;
     res->len = 0;
-    res->cap = 1;
+    res->cap = maxsize;
     res->nrows = rowlen;
     res->ncols = collen;
     return res;
