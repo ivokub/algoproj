@@ -45,22 +45,27 @@ int coo_set_value(struct_coo* mat, val v, row r, col c) {
         return -1;
     }
 
-    // Add value and location to the data structure
-    mat->values[mat->len] = malloc(sizeof(val));
-    *(mat->values[mat->len]) = v;
-    location loc = {r, c};
-    mat->locations[mat->len] = malloc(sizeof(location));
-    *(mat->locations[mat->len]) = loc;
-    mat->len++;
+    // If the value is already in the table, then change it.
+    val *existing = coo_get_value(mat, r, c);
+    if (!existing) {
+        // Add value and location to the data structure
+        mat->values[mat->len] = malloc(sizeof(val));
+        *(mat->values[mat->len]) = v;
+        location loc = {r, c};
+        mat->locations[mat->len] = malloc(sizeof(location));
+        *(mat->locations[mat->len]) = loc;
 
-    // Record the location in hashtable
-    cell *records = NULL;
-    cell *in = malloc(sizeof(cell));
-    memset(in, 0, sizeof(cell));
-    in->loc.r = r;
-    in->loc.c = c;
-    in->value = mat->values[mat->len];
-    HASH_ADD(hh, mat->cells, loc, sizeof(location), in);
+        // Record the location in hashtable
+        cell *in = malloc(sizeof(cell));
+        memset(in, 0, sizeof(cell));
+        in->loc.r = r;
+        in->loc.c = c;
+        in->value = mat->values[mat->len];
+        HASH_ADD(hh, mat->cells, loc, sizeof(location), in);
+        mat->len++;
+    } else {
+       *existing = v;
+    }
     return 0;
 }
 
