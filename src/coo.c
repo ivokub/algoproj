@@ -1,6 +1,10 @@
 #include "struct.h"
 #include "common.h"
 
+/*
+ * Matrix initialization and memory management
+ */
+
 struct_coo* new_coo(uint rowlen, uint collen, uint maxsize) {
     struct_coo* res = malloc(sizeof(struct_coo));
     res->values = malloc(sizeof(val*) * maxsize);
@@ -36,6 +40,12 @@ int _coo_increase(struct_coo* mat, int newsize) {
     return 0;
 }
 
+/*
+ * Getting and setting values
+ */
+
+GET_VALUE(coo)
+
 int coo_set_value(struct_coo* mat, val v, row r, col c) {
     SET_CHECK(coo)
     IFNEW(coo)
@@ -51,23 +61,9 @@ int coo_set_value(struct_coo* mat, val v, row r, col c) {
     return 0;
 }
 
-val* coo_get_value(struct_coo* mat, row r, col c) {
-    // Boundaries
-    if (r + 1 > mat->nrows || c + 1 > mat->ncols ) {
-        return 0;
-    }
-    // Find the value from hash table
-    cell cl;
-    memset(&cl, 0, sizeof(cell));
-    cl.loc.r = r;
-    cl.loc.c = c;
-    cell* res;
-    HASH_FIND(hh, mat->cells, &cl.loc, sizeof(location), res);
-    if (res) {
-        return res->value;
-    }
-    return 0;
-}
+/*
+ * Matrix algebra
+ */
 
 struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
     if (mat1->nrows != mat2->nrows || mat1->ncols != mat2->ncols ) {

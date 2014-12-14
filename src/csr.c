@@ -1,17 +1,9 @@
 #include "struct.h"
 #include "common.h"
 
-struct_coo* convert_csr_coo(struct_csr* mat) {
-    struct_coo* res = new_coo(mat->nrows, mat->ncols, mat->len);
-    int i, j, k = 0;
-    for (i = 0; i < mat->nrows; i++) {
-        for (j = mat->rowptr[i]; j < mat->rowptr[i+1]; j++) {
-            coo_set_value(res, *mat->values[j], i, *mat->colind[k]);
-            k++;
-        }
-    }
-    return res;
-}
+/*
+ * Matrix initialization and memory management
+ */
 
 struct_csr* new_csr(uint rowlen, uint collen, uint maxsize) {
     struct_csr *res = malloc(sizeof(struct_csr));
@@ -33,14 +25,32 @@ struct_csr* new_csr(uint rowlen, uint collen, uint maxsize) {
     return res;
 }
 
-struct_csr* convert_coo_csr(struct_coo* mat) {
-    int i;
-    struct_csr* res = new_csr(mat->nrows, mat->ncols, mat->len);
-    for (i = 0; i < mat->len; i++) {
-        csr_set_value(res, *mat->values[i], mat->locations[i]->r, mat->locations[i]->c);
+int _csr_increase(struct_csr* mat, int newsize) {
+    if (newsize < mat->cap) {
+        // New size should always be larger than current size.
+        // Otherwise, we wouldn't know what to do with the residue.
+        return 0;
     }
-    return res;
+    // If the user requests too small amount of memory, then allocate
+    // some prematurely.
+    if (mat->cap * 2 < newsize) {
+        mat->values = realloc(mat->values, sizeof(val*) * newsize);
+        mat->colind = realloc(mat->colind, sizeof(col*) * newsize);
+        mat->cap = newsize;
+    } else {
+        mat->values = realloc(mat->values, sizeof(val*) * 2 * mat->cap);
+        mat->colind = realloc(mat->colind, sizeof(col*) * 2 * mat->cap);
+        mat->cap = 2 * mat->cap;
+    }
+    if (mat->values == NULL || mat->colind == NULL) {
+        return -1;
+    }
+    return 0;
 }
+
+/*
+ * Getting and setting values
+ */
 
 GET_VALUE(csr)
 
@@ -77,25 +87,31 @@ int csr_set_value(struct_csr* mat, val v, row r, col c) {
     return 0;
 }
 
-int _csr_increase(struct_csr* mat, int newsize) {
-    if (newsize < mat->cap) {
-        // New size should always be larger than current size.
-        // Otherwise, we wouldn't know what to do with the residue.
-        return 0;
+/*
+ * Conversion from/to COO structure
+ */
+
+struct_coo* convert_csr_coo(struct_csr* mat) {
+    struct_coo* res = new_coo(mat->nrows, mat->ncols, mat->len);
+    int i, j, k = 0;
+    for (i = 0; i < mat->nrows; i++) {
+        for (j = mat->rowptr[i]; j < mat->rowptr[i+1]; j++) {
+            coo_set_value(res, *mat->values[j], i, *mat->colind[k]);
+            k++;
+        }
     }
-    // If the user requests too small amount of memory, then allocate
-    // some prematurely.
-    if (mat->cap * 2 < newsize) {
-        mat->values = realloc(mat->values, sizeof(val*) * newsize);
-        mat->colind = realloc(mat->colind, sizeof(col*) * newsize);
-        mat->cap = newsize;
-    } else {
-        mat->values = realloc(mat->values, sizeof(val*) * 2 * mat->cap);
-        mat->colind = realloc(mat->colind, sizeof(col*) * 2 * mat->cap);
-        mat->cap = 2 * mat->cap;
-    }
-    if (mat->values == NULL || mat->colind == NULL) {
-        return -1;
-    }
-    return 0;
+    return res;
 }
+
+struct_csr* convert_coo_csr(struct_coo* mat) {
+    int i;
+    struct_csr* res = new_csr(mat->nrows, mat->ncols, mat->len);
+    for (i = 0; i < mat->len; i++) {
+        csr_set_value(res, *mat->values[i], mat->locations[i]->r, mat->locations[i]->c);
+    }
+    return res;
+}
+
+/*
+ * Matrix algebra
+ */
