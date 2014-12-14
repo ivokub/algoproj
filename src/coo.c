@@ -107,11 +107,7 @@ struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
     item = NULL;
     HASH_ITER(hh, mat2->cells, item, tmp) {
         v = coo_get_value(res, item->loc.r, item->loc.c);
-        if (v) {
-            coo_set_value(res, *v + *item->value, item->loc.r, item->loc.c);
-        } else {
-            coo_set_value(res, *item->value, item->loc.r, item->loc.c);
-        }
+        coo_set_value(res, (v?*v:0) + *item->value, item->loc.r, item->loc.c);
     }
     return res;
 }
