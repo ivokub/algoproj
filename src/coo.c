@@ -46,20 +46,16 @@ int _coo_increase(struct_coo* mat, int newsize) {
 
 GET_VALUE(coo)
 
-int coo_set_value(struct_coo* mat, val v, row r, col c) {
-    SET_CHECK(coo)
-    IFNEW(coo)
+int _coo_set_value(struct_coo* mat, val v, row r, col c) {
     // Add value and location to the data structure
     mat->values[mat->len] = malloc(sizeof(val));
     *(mat->values[mat->len]) = v;
     location loc = {r, c};
     mat->locations[mat->len] = malloc(sizeof(location));
     *(mat->locations[mat->len]) = loc;
-    STOREHASH
-    mat->len++;
-    ENDIFNEW
-    return 0;
 }
+
+SET_VALUE(coo)
 
 /*
  * Matrix algebra

@@ -54,9 +54,7 @@ int _csr_increase(struct_csr* mat, int newsize) {
 
 GET_VALUE(csr)
 
-int csr_set_value(struct_csr* mat, val v, row r, col c) {
-    SET_CHECK(csr)
-    IFNEW(csr)
+void _csr_set_value(struct_csr* mat, val v, row r, col c) {
     // We find the correct row first. Then we do a linear search for the
     // right column.
     //
@@ -81,11 +79,9 @@ int csr_set_value(struct_csr* mat, val v, row r, col c) {
     for (kk = r+1; kk <= mat->nrows; kk++) {
         mat->rowptr[kk]++;
     }
-    STOREHASH
-    mat->len++;
-    ENDIFNEW
-    return 0;
 }
+
+SET_VALUE(csr)
 
 /*
  * Conversion from/to COO structure

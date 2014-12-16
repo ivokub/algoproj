@@ -46,4 +46,15 @@ val* MAT_T##_get_value(struct_##MAT_T *mat, row r, col c) { \
     in->value = mat->values[mat->len]; \
     HASH_ADD(hh, mat->cells, loc, sizeof(location), in); \
 
+#define SET_VALUE(MAT_T)\
+int MAT_T##_set_value(struct_##MAT_T *mat, val v, row r, col c) { \
+    SET_CHECK(MAT_T) \
+    IFNEW(MAT_T) \
+    _##MAT_T##_set_value(mat, v, r, c); \
+    STOREHASH \
+    mat->len++; \
+    ENDIFNEW \
+    return 0; \
+}
+
 #endif
