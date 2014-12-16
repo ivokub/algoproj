@@ -180,3 +180,46 @@ struct_csr* csr_matrix_add(struct_csr* mat1, struct_csr* mat2) {
     res->len = k;
     return res;
 }
+
+struct_csr* csr_matrix_mult(struct_csr* mat1, struct_csr* mat2) {
+    if (mat1->ncols != mat2->nrows) {
+        return 0;
+    }
+    struct_csr* res = new_csr(mat1->nrows, mat2->ncols, mat1->len);
+    int b, i, j, k, r, x, y;
+    int rp, cp;
+    rp = 0;
+    cp = 0;
+    k = 0;
+    uint* currentcol = malloc(sizeof(uint) * mat2->nrows);
+    val* currentrow = malloc(sizeof(val) * mat2->ncols);  // actually min of lengths
+    uint* ci = malloc(sizeof(uint) * mat2->ncols);
+
+
+    for (r = 0; r < mat1->nrows; r++) {
+        memset(currentrow, 0, sizeof(val) * mat2->ncols);
+        for (x = mat1->rowptr[r]; x < mat1->rowptr[r+1]; x++) {
+            for (k = 0; k < mat2->nrows; k++) {
+                currentcol[k] = mat2->rowptr[k];
+            }
+            j = 0;
+            while (j < mat2->nrows) {
+                if (currentcol[j] != mat2->rowptr[j+1] 
+                        && x == *mat2->colind[currentcol[j]]) {
+                    currentrow[currentcol[j]] += 
+                        *mat1->values[x] * *mat2->values[currentcol[j]];
+                    currentcol[j]++;
+                } else {
+                    j++;
+                }
+            }
+        }
+        for (j = 0; j < mat2->nrows; j++) {
+            if (currentrow[j]) {
+                csr_set_value(res, currentrow[j], r, j);
+            }
+        }
+    }
+
+    return res;
+}
