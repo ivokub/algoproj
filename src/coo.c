@@ -46,7 +46,7 @@ int _coo_increase(struct_coo* mat, int newsize) {
 
 GET_VALUE(coo)
 
-int _coo_set_value(struct_coo* mat, val v, row r, col c) {
+void _coo_set_value(struct_coo* mat, val v, row r, col c) {
     // Add value and location to the data structure
     mat->values[mat->len] = malloc(sizeof(val));
     *(mat->values[mat->len]) = v;
@@ -81,7 +81,11 @@ struct_coo* coo_matrix_add(struct_coo* mat1, struct_coo* mat2) {
     item = NULL;
     HASH_ITER(hh, mat2->cells, item, tmp) {
         v = coo_get_value(res, item->loc.r, item->loc.c);
-        coo_set_value(res, (v?*v:0) + *item->value, item->loc.r, item->loc.c);
+        if (v) {
+            *v += *item->value;
+        } else {
+            coo_set_value(res, *item->value, item->loc.r, item->loc.c);
+        }
     }
     return res;
 }
@@ -110,7 +114,11 @@ struct_coo* coo_matrix_mult(struct_coo* mat1, struct_coo* mat2) {
             if (loc1->c == loc2->r) {
                 val* val2 = mat2->values[j];
                 val *current = coo_get_value(res, loc1->r, loc2->c);
-                coo_set_value(res, (current?*current:0) + *val1 * *val2, loc1->r, loc2->c);
+                if (current) {
+                    *current += *val1 * *val2;
+                } else {
+                    coo_set_value(res, *val1 * *val2, loc1->r, loc2->c);
+                }
             }
         }
     }

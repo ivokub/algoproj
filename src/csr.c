@@ -111,3 +111,72 @@ struct_csr* convert_coo_csr(struct_coo* mat) {
 /*
  * Matrix algebra
  */
+
+struct_csr* csr_matrix_add(struct_csr* mat1, struct_csr* mat2) {
+    if (mat1->nrows != mat2->nrows || mat1->ncols != mat2->ncols ) {
+        return 0;
+    }
+    struct_csr* res = new_csr(mat1->nrows, mat1->ncols, mat1->len + mat2->len);
+    int i, j, k, r;
+    val *ind1, *ind2;
+    uint* row0 = res->rowptr;
+    uint* row1 = mat1->rowptr;
+    uint* row2 = mat2->rowptr;
+    k = 0;
+    i = 0;
+    j = 0;
+    for (r = 0; r < res->nrows; r++) {
+        while (i < mat1->rowptr[r+1] || j < mat2->rowptr[r+1] ) {
+            val* resv = malloc(sizeof(val));
+            col* resc = malloc(sizeof(col));
+            res->values[k] = resv;
+            res->colind[k] = resc;
+            ind1 = mat1->colind[i];
+            ind2 = mat2->colind[j];
+            if (ind1 && ind2) {
+                if (*ind1 == *ind2
+                        && i != mat1->rowptr[r+1]
+                        && j != mat2->rowptr[r+1]) {
+                    *resv = *mat1->values[i] + *mat2->values[j];
+                    *resc = *mat1->colind[i];
+                    res->values[k] = resv;
+                    res->colind[k] = resc;
+                    i++;
+                    j++;
+                } else if ((*ind1 < *ind2
+                            && i != mat1->rowptr[r+1])
+                        || j == mat2->rowptr[r+1]) {
+                    *resv = *mat1->values[i];
+                    *resc = *mat1->colind[i];
+                    res->values[k] = resv;
+                    res->colind[k] = resc;
+                    i++;
+                } else if ((*ind1 > *ind2
+                            && j != mat2->rowptr[r+1])
+                        || i == mat1->rowptr[r+1]) {
+                    *resv = *mat2->values[j];
+                    *resc = *mat2->colind[j];
+                    res->values[k] = resv;
+                    res->colind[k] = resc;
+                    j++;
+                }
+            } else if (ind1) {
+                *resv = *mat1->values[i];
+                *resc = *mat1->colind[i];
+                res->values[k] = resv;
+                res->colind[k] = resc;
+                i++;
+            } else if (ind2) {
+                *resv = *mat2->values[j];
+                *resc = *mat2->colind[j];
+                res->values[k] = resv;
+                res->colind[k] = resc;
+                j++;
+            }
+            k++;
+        }
+        res->rowptr[r+1] = k;
+    }
+    res->len = k;
+    return res;
+}
