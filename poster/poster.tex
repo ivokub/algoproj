@@ -1,0 +1,297 @@
+\documentclass[portrait,a0]{sciposter}
+
+\usepackage{amsmath, amsfonts, amsthm, amssymb}
+\usepackage{multicol}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{algorithmicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+
+\theoremstyle{definition}\newtheorem{definition}{Definition}
+\theoremstyle{plain}\newtheorem{example}{Example}
+\theoremstyle{plain} \newtheorem{theorem}{Theorem}
+
+\title{Sparse matrix algebra}
+\author{Ivo Kubjas}
+\institute{Institute of Computer Science, University of Tartu}
+\email{ivokub@ut.ee}  % shows author email address below institute
+
+\leftlogo[1]{/home/ivo/Documents/Kool/UT/masters/poster/logos/500px-Tartu_Ülikool_logo.png}  % defines logo to left of title (with scale factor)
+
+\newcommand{\FFF}{\mathbb{F}}
+\newcommand{\AAA}{\mathbb{A}}
+\newcommand{\MMM}{\mathbb{M}}
+\DeclareMathOperator*{\rank}{rank}
+
+\begin{document}
+\conference{Algorithmics course 2014}
+\maketitle
+
+\begin{multicols}{2}
+    \section{Sparse matrices}
+
+    As the naive matrix multiplication algorithm works in a time $O(n^3)$, where
+    $n$ is the size of a $n \times n$-dimensional matrix, then multiplication of
+    large matrices is unfeasible even with supercomputers.
+
+    \begin{definition}
+        A $l$-sparse matrix is a matrix where nonzero values do not exceed
+        $l$-th of all elements of the matrix.
+    \end{definition}
+
+    Sparse matrices can be found in several areas of mathematics and computer
+    science. For example, one can represent a graph as its adjacency matrix.
+    Then taking the $i$-th power of the matrix yields the number of connections
+    between vertices in the graph. This metric describes the connectivity of the
+    graph. This approach is used for calculating PageRank to study the
+    importance of a internet page as more important pages tend to have more
+    incoming links.
+
+    Depending on the parameters, different algorithms for constructing the
+    product of matrices are proposed. We consider two approaches:
+    \begin{itemize}
+        \item the case where the number of nonzero elements is linear to the
+            side size of the matrix, i.e. $m = O(n)$, where $m$ is the number of
+            nonzero elements in the matrix and the matrix has dimension $n
+            \times n$;
+        \item the case where the number of nonzero elements is linear to the
+            size of the matrix, i.e. $m = O(n^2)$ with previously defined
+            variables.
+    \end{itemize}
+
+    The second problem is well studied for the case if the second matrix has a
+    single column, or also that it is a vector. However, a matrix can be
+    represented as a collection of vectors and combined after into a matrix.
+
+    The first problem was mostly unknown and thus we have implemented a new
+    algorithm for multiplying matrices of this kind.
+
+    \begin{definition}
+        A coordinate matrix representation (COO) format is a format where nonzero
+        elements are stored together with the row and column location.
+    \end{definition}
+
+    \begin{example}
+        Let the matrix $M$ be
+        \[
+            M = \left(\begin{matrix}
+            0 & 0 & 1 & 0 \\
+            2 & 0 & 3 & 0 \\
+            0 & 0 & 0 & 4 \\
+            0 & 5 & 0 & 0
+            \end{matrix}\right)
+        \]
+        The COO representation is
+        \begin{align*}
+            V &= [1, 2, 3, 4, 5], \\
+            Y & = [2, 0, 2, 3, 1], \\
+            X &= [0, 1, 1, 2, 3].
+        \end{align*}
+    \end{example}
+
+    \begin{definition}
+        A compressed row storage representation (CSR) format is a format where
+        the column indices and starting points of the columns are stored as
+        arrays together with values as a array.
+
+    \end{definition}
+
+    \begin{example}
+        Let the matrix $M$ be
+        \[
+            M = \left(\begin{matrix}
+            0 & 0 & 1 & 0 \\
+            2 & 0 & 3 & 0 \\
+            0 & 0 & 0 & 4 \\
+            0 & 5 & 0 & 0
+            \end{matrix}\right)
+        \]
+        The CSR representation is
+        \begin{align*}
+            V &= [1, 2, 3, 4, 5], \\
+            CI &= [2, 0, 2, 3, 1], \\
+            RP &= [0, 1, 3, 4, 4]. \\
+        \end{align*}
+    \end{example}
+
+    As a novel definition, we propose the following hash-table based
+    representation of matrices.
+
+    \begin{definition}
+        A hash-table matrix representation (HT) format is a format where the
+        values are stored together with the value location in a hash table.
+    \end{definition}
+
+    \section{Implementation}
+
+    We have implemented all formats in C programming language. The language was
+    chosen because it allows for the most low-level manipulation of memory, thus
+    allowing for memory access optimization if the algorithms are implemented on
+    parallel hardware. The implementation is available at~\cite{algoproject}.
+
+    \subsection{HT representation}
+
+    We study the implementation of HT format more thoroughly as it is to our
+    knowledge novel. The data structure was defined as
+    \begin{verbatim}
+    typedef struct {
+        uint len;
+        uint cap;
+        uint nrows;
+        uint ncols;
+        val** values;
+        location** locations;
+        cell *cells;
+    } struct_coo;
+    \end{verbatim}
+
+    We implemented the values and locations as list of pointers as it allows for
+    in-place modification without expensive retrieval and assignment.
+
+    We used the \textsc{uthash} library for implementing the hash tables.
+
+    The addition and multiplication algorithms were defined as
+    
+    \subsubsection{Addition algorithm}
+
+    \begin{verbatim}
+    HASH_ITER(hh, mat1->cells, item, tmp) {
+        coo_set_value(res, *item->value,
+                      item->loc.r, item->loc.c);
+    }
+    HASH_ITER(hh, mat2->cells, item, tmp) {
+        v = coo_get_value(res, item->loc.r, item->loc.c);
+        if (v) {
+            *v += *item->value;
+        } else {
+            coo_set_value(res, *item->value,
+                          item->loc.r, item->loc.c);
+        }
+    }
+    \end{verbatim}
+
+    \subsubsection{Multiplication algorithm}
+
+    \begin{verbatim}
+    for (i = 0; i < mat1->len; i++) {
+        location* loc1 = mat1->locations[i];        
+        val* val1 = mat1->values[i];
+        for (j = 0; j < mat2->len; j++) {
+            location* loc2 = mat2->locations[j];
+            if (loc1->c == loc2->r) {
+                val* val2 = mat2->values[j];
+                val *current = coo_get_value(res,
+                                             loc1->r,
+                                             loc2->c);
+                if (current) {
+                    *current += *val1 * *val2;
+                } else {
+                    coo_set_value(res, *val1 * *val2,
+                                  loc1->r, loc2->c);
+                }
+            }
+        }
+    }
+
+    \end{verbatim}
+
+    \subsubsection{Complexity analysis}
+
+    The addition operation consists of iterating over the values of both
+    matrices. If the first matrix has $m_1$ nonzero entries and the second
+    matrix has $m_2$ nonzero entries, then there are $m_1 + m_2$ steps. Each
+    step consists of value retrieval, single addition and value assignment.
+    Because the hash table allows constant time lookup and insertion, then the
+    time complexity is $O(m_1+m_2)$.
+
+    The multiplication uses Cartesian product of the hash table entries. Each
+    element in the product is iterated over. This requires $m_1 m_2$ steps. In
+    each step, two retrievals from the hash table, a single condition
+    checking and a single assignment is done. Because the hash table operations
+    are constant time, then the time complexity of multiplication is $O(m_1
+    m_2)$.
+
+    \subsubsection{Experimental results}
+
+    We experimented on the running time of the algorithms to compare them
+    against theoretical running time. The corresponding plots are illustrated in
+    Figures~\ref{fig:add} and~\ref{fig:mult}.
+
+    \begin{figure}
+        \begin{tikzpicture}
+            \begin{axis}
+                [xlabel=Number of nonzero points,
+                    compat=1.3,
+                    ylabel=Running time,
+                    height=0.1\textheight,
+                    width=\textwidth,
+                    xmin=50000,
+                    xmax=140000,
+                    ymin=0.05,
+                    ymax=0.280,
+                    grid=major,
+                    legend pos=north west,
+                    yticklabel style={/pgf/number format/fixed, /pgf/number
+                    format/precision=7},
+                    xtick={50000, 60000, 70000, 80000, 90000, 100000, 110000,
+                    120000, 130000, 140000},
+                scaled x ticks=false]
+                \addplot+[smooth,color=blue] table[col
+                sep=comma,x=algorithm,y=time,color=blue] {add.csv};
+                \addlegendentry{Algorithm}
+                \addplot+[color=red] table[col
+                sep=comma,x=algorithm,y=linear,color=red] {add.csv};
+                \addlegendentry{$18/5000000 m$}
+            \end{axis}
+        \end{tikzpicture}
+\label{fig:add}
+        \caption{Running time of the addition algorithm}
+    \end{figure}
+
+    \begin{figure}
+        \begin{tikzpicture}
+            \begin{axis}
+                [xlabel=Number of nonzero points,
+                    compat=1.3,
+                    ylabel=Running time,
+                    height=0.1\textheight,
+                    width=\textwidth,
+                    xmin=9000,
+                    xmax=101000,
+                    ymin=0,
+                    ymax=160,
+                    grid=major,
+                    legend pos=north west,
+                    yticklabel style={/pgf/number format/fixed, /pgf/number
+                    format/precision=7},
+                    xtick={10000, 20000, 30000, 40000, 50000, 60000, 70000,
+                    80000, 90000, 100000},
+                scaled x ticks=false]
+                \addplot+[smooth,color=blue] table[col
+                sep=comma,x=algorithm,y=time,color=blue] {mult.csv};
+                \addlegendentry{Algorithm}
+                \addplot+[smooth,color=red] table[col
+                sep=comma,x=algorithm,y=quad,color=red] {mult.csv};
+                \addlegendentry{$7/500000000 m^2$}
+            \end{axis}
+        \end{tikzpicture}
+\label{fig:mult}
+        \caption{Running time of the multiplication algorithm}
+    \end{figure}
+
+
+    \nocite{bell2009implementing}
+    \nocite{bell2008efficient}
+    \nocite{dongarraxz1994sparse}
+    \nocite{duff1986direct}
+    \bibliographystyle{plain}
+    \bibliography{../materials/references.bib}
+
+\end{multicols}
+
+\end{document}
