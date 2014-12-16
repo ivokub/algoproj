@@ -11,7 +11,7 @@ LIBS=-lm
 _DEPS = struct.h common.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = coo.o csr.o
+_OBJ = coo.o csr.o sparse.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
