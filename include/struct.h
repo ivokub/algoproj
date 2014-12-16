@@ -43,6 +43,7 @@ typedef struct {
     cell *cells;
 } struct_coo;
 struct_coo* new_coo(uint, uint, uint);
+void _coo_set_value(struct_coo*, val, row, col);
 int coo_set_value(struct_coo*, val, row, col);
 val* coo_get_value(struct_coo*, row, col);
 struct_coo* coo_matrix_add(struct_coo*, struct_coo*);
@@ -65,6 +66,7 @@ typedef struct {
 struct_csr* new_csr(uint, uint, uint);
 struct_coo* convert_csr_coo(struct_csr*);
 struct_csr* convert_coo_csr(struct_coo*);
+void _csr_set_value(struct_csr*, val, row, col);
 int csr_set_value(struct_csr*, val, row, col);
 val* csr_get_value(struct_csr*, row, col);
 struct_csr* csr_matrix_add(struct_csr*, struct_csr*);
